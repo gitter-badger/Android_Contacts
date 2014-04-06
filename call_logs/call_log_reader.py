@@ -8,8 +8,8 @@ Pseudo code
    if latest date present from step 3 then get all call log whose date greater than latest call log date.
    else get all call logs records.
    Each call_log_info_dict contain following info
-   {u'name': u'Gaju', u'numbertype': u'1', u'number': u'+919423231248', 
-    u'date': u'1388714531568', u'duration': u'64', u'new': u'0', u'_id': u'4551', 
+   {u'name': u'Gaju', u'numbertype': u'1', u'number': u'+919423231248',
+    u'date': u'1388714531568', u'duration': u'64', u'new': u'0', u'_id': u'4551',
     u'type': u'2'}
 5) Create empty dict say call_log_per_record_dict = {}.
 6) Iterate through each dict and in each iteration perform following steps
@@ -24,8 +24,10 @@ Pseudo code
 ##########################################
 '''
 import sqlite3
-import android
 import datetime
+import re
+import android
+from db_connection import DB_Connection
 
 def convert_unix_epoch_to_datetime(date_int):
 	'''
@@ -47,20 +49,6 @@ def convert_datetime_to_epoch(datetime_str):
 	epoch_time = int(datetime_obj.strftime("%s"))
 	return epoch_time
 
-class DB_Connection(object):
-	def __init__(self, db_file):
-		self.connection = sqlite3.connect(db_file)
-		self.cursor = self.connection.cursor()
-
-	def execute_sql(self, query, args=()):
-		try:
-			self.cursor.execute(query, args)
-			self.connection.commit()
-		except Exception as e:
-			#Roll back
-			self.connection.rollback()
-		return
-
 class Call_Log_Info_Data(object):
 	def __init__(self):
 		self.name=None
@@ -74,19 +62,18 @@ class Call_Log_Info_Data(object):
 		return
 
 class Call_Log_Reader(object):
-	
-	def __init__(self):
-		self.droid = android.Android()
-		self.db_connection = DB_Connection("call_log_database.db")
+
+	def __init__(self, droid, db_connection):
+		self.droid = droid
+		self.db_connection = db_connection
 		self.connection = self.db_connection.connection
 		self.cursor = self.db_connection.cursor
-		#self.call_log_per_record_dict = collections.defaultdict(list)
-	
+
 	def query_android_call_log(self, selection, args):
 		query = "content://call_log/calls"
 		call_log_result_list = self.droid.queryContent(query, None, selection, args).result
 		return call_log_result_list
-	
+
 	def get_latest_call_log_date(self):
 		#Check if record present in call log info
 		latest_call_log_date = None
@@ -98,7 +85,7 @@ class Call_Log_Reader(object):
 		return latest_call_log_date
 
 	def start(self):
-		
+
 		selection = None
 		args = None
 		latest_call_log_date = self.get_latest_call_log_date()
@@ -107,7 +94,7 @@ class Call_Log_Reader(object):
 			latest_call_log_date = convert_datetime_to_epoch(latest_call_log_date)
 			#Convert seconds to milisecond
 			args = [latest_call_log_date * 1000]
-		
+
 		android_call_log_dict_list = self.query_android_call_log(selection, args)
 		#Iterate through android call log dict and create call_log_per_record_dict
 
@@ -142,7 +129,7 @@ class Call_Log_Reader(object):
 			pass
 		call_log_info_obj.call_log_type = int(call_log_dict["type"])
 		return call_log_info_obj
-	
+
 	def populate_call_log_info_data(self, call_log_info_object):
 		'''
 			Insert data to call_log_info table.
@@ -163,7 +150,9 @@ class Call_Log_Reader(object):
 
 
 if __name__ == "__main__":
-	log_reader = Call_Log_Reader()
+	droid = android.Android()
+	db_connection = DB_Connection("call_log_database.db")
+	log_reader = Call_Log_Reader(droid, db_connection)
 	log_reader.start()
-				
-		
+
+

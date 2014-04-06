@@ -1,0 +1,52 @@
+<html>
+    <head>
+        <h1>Call Logs</h1>
+    </head>
+    <body>
+	<button id="read" onclick="postandwaitforCallLogs()">Read Call Logs</button>
+    <table id="call_log_display">
+	<tr><th>Name</th>
+	    <th>Number</th>
+	    <th>Total Calls</th>
+	</tr>
+    </table>
+    </body>
+    <script>
+             var droid = new Android();
+	     //alert("I come here");
+             function postandwaitforCallLogs() {
+	     alert("I called");
+             droid.eventPost("calllog", "");
+             var result = droid.eventWaitFor("call_logs_read").result;
+	     alert("I caught you");
+	     var call_log_list_list = result.data;
+             //document.write("<p>" + JSON.stringify(call_log_list_list) + "</p>");
+	     var call_log_list_list = JSON.parse(call_log_list_list);
+             alert(" I parsed call log list");
+	     var call_log_container = document.getElementById("call_log_display");
+	     for (var i=0; i<call_log_list_list.length; i++)
+	     {
+		var tr_tag = "<tr>";
+		call_log_list = call_log_list_list[i];
+		var contact_name = call_log_list[0];
+		var contact_number = call_log_list[1];
+		var total_calls = call_log_list[2];
+		var contact_name_td = '<td><a href="#">' + contact_name + '</a></td>';
+		var contact_number_td = '<td>' + contact_number + '</td>';
+		var total_calls_td = '<td>' + total_calls + '</td>';
+		tr_tag += contact_name_td;
+		tr_tag += contact_number_td;
+		tr_tag += total_calls_td;
+		tr_tag += "</tr>";
+		call_log_container.innerHTML += tr_tag;
+	     }
+             }
+	      //window.addEvent("domready", function() {
+		//$('read').addEvent('click', function() { postandwaitforCallLogs(); });
+              //});
+             
+	     //var display_contact = function() {
+		//<!-- This function called when user click on any of the contact name. -->
+	     //}
+	</script>
+</html>
